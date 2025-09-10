@@ -1,7 +1,7 @@
 // backend/routes/complaints.js
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 // Submit a general complaint
 router.post('/', async (req, res) => {
@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `INSERT INTO "Complaint" 
       ("DriverID", "PassengerID", "description", "status")
       VALUES ($1, $2, $3, $4)

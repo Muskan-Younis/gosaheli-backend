@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 /// GET accepted carpool requests for a passenger (with driver & vehicle info)
 router.get('/accepted-requests/:passengerId', async (req, res) => {
@@ -49,7 +49,7 @@ router.get('/accepted-requests/:passengerId', async (req, res) => {
 
     const values = [passengerId];
 
-    const { rows } = await client.query(query, values);
+    const { rows } = await pool.query(query, values);
 
     res.status(200).json({
       success: true,
@@ -72,7 +72,7 @@ router.get('/vehicle-info/:driverId', async (req, res) => {
   const { driverId } = req.params;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `SELECT "VehicleModel", "PlateNumber", "color" 
        FROM "Vehicle" 
        WHERE "DriverID" = $1`,

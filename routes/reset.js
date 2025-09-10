@@ -1,7 +1,7 @@
 // backend/routes/reset.js
 const express = require('express');
 const router = express.Router();
-const client = require('../db'); // PostgreSQL client
+const pool = require('../db');
 
 // Check if user email exists
 router.get("/check-email", async (req, res) => {
@@ -12,7 +12,7 @@ router.get("/check-email", async (req, res) => {
       return res.status(400).json({ error: "Email is required" });
     }
 
-    const result = await client.query(
+    const result = await pool.query(
       `SELECT "UserID" FROM "User" WHERE "email" = $1 LIMIT 1`,
       [email]
     );

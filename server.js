@@ -1,162 +1,161 @@
+// ==========================
+// server.js
+// ==========================
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 5000;
-
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
-const client = require('./db');
 
-const uploadVehicleImage = require('./routes/uploadVehicleImage');
-const uploadLicense = require('./routes/uploadLicense');
+// Database pool
+const pool = require('./db');
 
-// ========== MIDDLEWARE ==========
+// ==========================
+// MIDDLEWARE
+// ==========================
 app.use(cors({ origin: '*' }));
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ========== Multer Config ==========
+// Static folders
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/Vehicle_Images', express.static(path.join(__dirname, 'Vehicle_Images')));
+app.use('/License_Images', express.static(path.join(__dirname, 'License_Images')));
+
+// ==========================
+// MULTER CONFIG
+// ==========================
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: (req, file, cb) => {
     const uploadPath = path.join(__dirname, 'uploads');
     if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
     cb(null, uploadPath);
   },
-  filename: function (req, file, cb) {
+  filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     cb(null, `${Date.now()}${ext}`);
   }
 });
 const upload = multer({ storage });
 
+// ==========================
+// IMPORT ROUTES
+// ==========================
+const driversRoutes = require('./routes/drivers');
+const updateDriverStatusRoutes = require('./routes/UpdateDriverStatus');
+const notificationPassengerRoutes = require('./routes/NotificationPassenger');
+const saheliFeedbackRoutes = require('./routes/saheliFeedback');
+const driverRidesRoutes = require('./routes/driverRides');
+const rideRequestsRoutes = require('./routes/rideRequests');
+const profileUpdationRoutes = require('./routes/ProfileUpdation');
+const changePasswordRoute = require('./routes/ChangeThePassword');
+const feedbackRoute = require('./routes/feedback');
+const notificationsRouter = require('./routes/notifications');
+const complaintsRoutes = require('./routes/complaints');
+const favouritesRoutes = require('./routes/favourites');
+const favouriteDetailsRouter = require('./routes/favouriteDetails');
+const becomePassengerRoute = require('./routes/becomePassenger');
+const resetRoutes = require('./routes/reset');
+const getPassengerByUserId = require('./routes/getPassengerByUserId');
+const becomeDriverRoute = require('./routes/becomeDriver');
+const driverCarpoolRoutes = require('./routes/DriverCarpool');
+const carpoolRoutes = require('./routes/carpool');
+const acceptedPassengerRoutes = require('./routes/AcceptedPassengerCarpools');
+const uploadVehicleImage = require('./routes/uploadVehicleImage');
+const uploadLicense = require('./routes/uploadLicense');
+const deleteLicenseImage = require('./routes/deleteLicenseImage');
+const vehicleDetailsRoutes = require('./routes/vehicleDetails');
+const createDriver = require('./routes/createDriver');
+const createUser = require('./routes/createUser');
+const createPassenger = require('./routes/createPassenger');
 
-// ========== ✅Sundus Routes ==========
-const driversRoutes = require("./routes/drivers");
-app.use('/drivers', driversRoutes);
-
-const updateDriverStatusRoutes = require("./routes/UpdateDriverStatus");
-app.use('/api/driver', updateDriverStatusRoutes);
-// Add a simple test route
+// ==========================
+// ROOT & TEST ROUTE
+// ==========================
 app.get('/', (req, res) => {
   res.send('GOSAHELI Backend Server is Running!');
 });
-// ========== ✅Routes ==========
 
-//  Notify Passenger
-const notificationPassengerRoutes = require('./routes/NotificationPassenger');
-app.use('/api/notification', notificationPassengerRoutes);
+// ==========================
+// ROUTES
+// ==========================
 
-//  saheli Feedback
-const saheliFeedbackRoutes = require('./routes/saheliFeedback');
-app.use('/api', saheliFeedbackRoutes);
-
-// ✅ Ride Booking APIs
-const driverRidesRoutes = require("./routes/driverRides");
-app.use("/api/driver/rides", driverRidesRoutes);
-
-const rideRequestsRoutes = require("./routes/rideRequests");
-app.use("/api/ride-requests", rideRequestsRoutes);
-
-//  ProfileUpdation
-const profileUpdationRoutes = require('./routes/ProfileUpdation');
-app.use(profileUpdationRoutes);
-
-// password update
-const changePasswordRoute = require('./routes/ChangeThePassword');
-app.use('/api', changePasswordRoute);
-
-//  feedback
-const feedbackRoute = require('./routes/feedback'); // Adjust path if needed
-app.use('/api/feedback', feedbackRoute);
-
-//  notification
-const notificationRoutes = require('./routes/notifications'); // adjust path if needed
-app.use('/api', notificationRoutes);
-const notificationsRouter = require('./routes/notifications');
-app.use('/api/notifications', notificationsRouter);
-
-//  complaints
-app.use('/api/complaints', require('./routes/complaints'));
-
-//  Favourites
-app.use("/api/favourites", require("./routes/favourites"));
-const favouriteDetailsRouter = require('./routes/favouriteDetails');
-
-app.use('/favourites', favouriteDetailsRouter); 
-
-//  Become Passenger
-const becomePassengerRoute = require('./routes/becomePassenger');
-app.use('/api/become-passenger', becomePassengerRoute);
-
-//  reset
-const Reset = require("./routes/reset");
-app.use('/User', Reset);
-
-const getPassengerByUserId = require('./routes/getPassengerByUserId');
-app.use('/api/get-passenger', getPassengerByUserId);
-
-
-//  Become Driver
-const becomeDriverRoute = require('./routes/becomeDriver');
-app.use('/become-driver', becomeDriverRoute);
-
-const driverCarpoolRoutes = require('./routes/DriverCarpool');
+// Drivers
+app.use('/api/drivers', driversRoutes);
+app.use('/api/driver', updateDriverStatusRoutes);
+app.use('/api/driver/rides', driverRidesRoutes);
 app.use('/api/driver/carpool', driverCarpoolRoutes);
 
-// 🚗 Carpools
-const carpoolRoutes = require('./routes/carpool');
-app.use('/api/carpool', carpoolRoutes);
+// Notifications
+app.use('/api/notification', notificationPassengerRoutes);
+app.use('/api/notifications', notificationsRouter);
 
-// 🙋 Accepted Passenger Carpools
-const acceptedPassengerRoutes = require('./routes/AcceptedPassengerCarpools');
+// user stuff
+app.use('/api/create-driver', createDriver);
+app.use('/api/create-user', createUser);
+
+app.use('/api/create-passenger', createPassenger);
+
+// Feedback
+app.use('/api/feedback', feedbackRoute);
+app.use('/api/saheli-feedback', saheliFeedbackRoutes);
+
+// Ride requests
+app.use('/api/ride-requests', rideRequestsRoutes);
+
+// Profile
+app.use('/api/profile', profileUpdationRoutes);
+app.use('/api/change-password', changePasswordRoute);
+
+// Complaints
+app.use('/api/complaints', complaintsRoutes);
+
+// Favourites
+app.use('/api/favourites', favouritesRoutes);
+app.use('/api/favourites-details', favouriteDetailsRouter);
+
+// Passenger
+app.use('/api/become-passenger', becomePassengerRoute);
+app.use('/api/get-passenger', getPassengerByUserId);
+
+// Driver
+app.use('/api/become-driver', becomeDriverRoute);
+
+// Carpools
+app.use('/api/carpool', carpoolRoutes);
 app.use('/api/accepted-carpool', acceptedPassengerRoutes);
 
-app.use('/Vehicle_Images', express.static(path.join(__dirname, 'Vehicle_Images')));
-app.use('/', uploadVehicleImage);
-app.use('/', require('./routes/uploadVehicleImage'));
-const uploadVehicleRoutes = require('./routes/uploadVehicleImage');
-app.use(uploadVehicleRoutes);
+// Vehicle & License uploads
+app.use('/api/upload-vehicle', uploadVehicleImage);
+app.use('/api/upload-license', uploadLicense);
+app.use('/api/delete-license', deleteLicenseImage);
 
+// Vehicle details
+app.use('/api/vehicle-details', vehicleDetailsRoutes);
 
+// Reset
+app.use('/api/reset', resetRoutes);
 
-//  License imges url to uploads
-app.use('/License_Images', express.static(path.join(__dirname, 'License_Images')));
-app.use(uploadLicense);
-
-const deleteLicenseImage = require('./routes/deleteLicenseImage');
-app.use('/', deleteLicenseImage);
-
-
-// vehicle details in table
-const vehicleDetailsRoutes = require('./routes/vehicleDetails');
-app.use('/vehicleDetails', vehicleDetailsRoutes);
-
-// Add this to your server.js file
-
-// ✅ Update fare rate
+// ==========================
+// FARE RATE
+// ==========================
+// Update fare rate
 app.put('/api/fare-rate', async (req, res) => {
   const { fareRate } = req.body;
-  
   try {
-    // Check if fare rate exists in the database
-    const checkResult = await client.query('SELECT * FROM fare_settings WHERE id = 1');
-    
-    if (checkResult.rows.length > 0) {
-      // Update existing fare rate
-      await client.query(
-        'UPDATE fare_settings SET rate = $1, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
+    const check = await pool.query('SELECT * FROM fare_settings WHERE id = 1');
+    if (check.rows.length > 0) {
+      await pool.query(
+        'UPDATE fare_settings SET rate_per_km = $1, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
         [fareRate]
       );
     } else {
-      // Insert new fare rate
-      await client.query(
-        'INSERT INTO fare_settings (id, rate) VALUES (1, $1)',
+      await pool.query(
+        'INSERT INTO fare_settings (id, rate_per_km) VALUES (1, $1)',
         [fareRate]
       );
     }
-    
     res.json({ success: true, message: 'Fare rate updated successfully' });
   } catch (error) {
     console.error('Error updating fare rate:', error);
@@ -164,17 +163,11 @@ app.put('/api/fare-rate', async (req, res) => {
   }
 });
 
-// ✅ Get current fare rate
+// Get current fare rate
 app.get('/api/fare-rate', async (req, res) => {
   try {
-    const result = await client.query('SELECT rate FROM fare_settings WHERE id = 1');
-    
-    if (result.rows.length > 0) {
-      res.json({ success: true, fareRate: result.rows[0].rate });
-    } else {
-      // Return a default value if no fare rate is set
-      res.json({ success: true, fareRate: 50 });
-    }
+    const result = await pool.query('SELECT rate_per_km FROM fare_settings WHERE id = 1');
+    res.json({ success: true, fareRate: result.rows[0]?.rate_per_km || 50 });
   } catch (error) {
     console.error('Error fetching fare rate:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch fare rate' });
@@ -183,31 +176,32 @@ app.get('/api/fare-rate', async (req, res) => {
 
 
 
+// ==========================
+// USER ROUTES
+// ==========================
 
-
-//  Check if user exists
-app.post('/user/check-exists', async (req, res) => {
+// Check if email or phone exists
+app.post('/api/user/check-exists', async (req, res) => {
   const { email, phoneNo } = req.body;
   try {
-    const emailResult = await client.query('SELECT 1 FROM "User" WHERE email = $1 LIMIT 1', [email]);
-    const phoneResult = await client.query('SELECT 1 FROM "User" WHERE phoneno = $1 LIMIT 1', [phoneNo]);
-
+    const emailResult = await pool.query('SELECT 1 FROM "User" WHERE email = $1 LIMIT 1', [email]);
+    const phoneResult = await pool.query('SELECT 1 FROM "User" WHERE phoneno = $1 LIMIT 1', [phoneNo]);
     res.json({
       emailExists: emailResult.rows.length > 0,
       phoneExists: phoneResult.rows.length > 0
     });
   } catch (err) {
-    console.error('Error checking user existence:', err);
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ✅ Register User
-app.post('/user', async (req, res) => {
+// Register
+app.post('/api/user', async (req, res) => {
   const { email, username, password, phoneNo } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await client.query(
+    const result = await pool.query(
       'INSERT INTO "User" (email, username, password, phoneNo) VALUES ($1, $2, $3, $4) RETURNING *',
       [email, username, hashedPassword, phoneNo]
     );
@@ -221,39 +215,17 @@ app.post('/user', async (req, res) => {
   }
 });
 
-// ✅ Login
-app.post('/login', async (req, res) => {
+// Login
+app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
-
   try {
-    // Get user by email
-    const result = await client.query('SELECT * FROM "User" WHERE email = $1', [email]);
-
-    // Debug: Show result
-    console.log('User fetch result:', result.rows);
-
-    // Check if user exists
-    if (!result.rows.length) {
-      console.warn('❌ No user found for email:', email);
-      return res.status(401).json({ message: 'Invalid credentials (user not found)' });
-    }
+    const result = await pool.query('SELECT * FROM "User" WHERE email = $1', [email]);
+    if (!result.rows.length) return res.status(401).json({ message: 'Invalid credentials' });
 
     const user = result.rows[0];
-
-    // Ensure password exists in DB
-    if (!user.password) {
-      console.error('❌ Password missing for user:', user);
-      return res.status(500).json({ message: 'Password missing in DB' });
-    }
-
-    // Compare password
     const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      console.warn('❌ Incorrect password for:', email);
-      return res.status(401).json({ message: 'Invalid credentials (wrong password)' });
-    }
+    if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-    // Respond with success and user info
     res.json({
       success: true,
       user: {
@@ -262,188 +234,93 @@ app.post('/login', async (req, res) => {
         email: user.email
       }
     });
-
   } catch (error) {
-    console.error('🔥 Unexpected Login Error:', error);
-    res.status(500).json({ message: 'Something went wrong. Please try again later.' });
-  }
-});
-
-app.get('/user-by-email', async (req, res) => {
-  const { email } = req.query;
-
-  if (!email) {
-    return res.status(400).json({ 
-      error: 'Email parameter is required' 
-    });
-  }
-
-  try {
-    const query = `
-      SELECT 
-       "UserID",
-        "username",
-        "email",
-        "last_role"
-      FROM "User"
-      WHERE "email" = $1
-    `;
-
-    const { rows } = await client.query(query, [email]);
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ 
-        error: 'User not found' 
-      });
-    }
-
-    res.json(rows[0]);
-
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error' 
-    });
-  }
-});
-
-// Add this to server.js before the app.listen() call
-app.get('/check-email', async (req, res) => {
-  const { email } = req.query;
-  
-  if (!email) {
-    return res.status(400).json({ 
-      error: 'Email parameter is required' 
-    });
-  }
-
-  try {
-    // Check PostgreSQL
-    const pgResult = await client.query(
-      'SELECT 1 FROM "User" WHERE email = $1', 
-      [email]
-    );
-    
-    res.json({ 
-      exists: pgResult.rows.length > 0 
-    });
-    
-  } catch (error) {
-    console.error('Email check error:', error);
-    res.status(500).json({ 
-      error: 'Check failed' 
-    });
-  }
-});
-
-// ✅ Get user by email
-app.get('/user', async (req, res) => {
-  const { email } = req.query;
-  try {
-    const result = await client.query('SELECT * FROM "User" WHERE email = $1', [email]);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: 'Fetch error' });
-  }
-});
-
-// ✅ Get user by UserID
-app.get('/user-by-id/:userId', async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const result = await client.query(
-      `SELECT "UserID", "username", "email", "photo_url", "last_role" 
-       FROM "User" WHERE "UserID" = $1`,
-      [userId]
-    );
-
-    if (result.rows.length > 0) {
-      res.json(result.rows[0]);
-    } else {
-      res.status(404).json({ message: 'User not found' });
-    }
-  } catch (error) {
-    console.error('Error fetching user by ID:', error);
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
-// ✅ Get Driver by UserID
-app.get('/driver-by-user-id/:userId', async (req, res) => {
+
+// Get user by email
+app.get('/api/user', async (req, res) => {
+  const { email } = req.query;
+  try {
+    const result = await pool.query('SELECT * FROM "User" WHERE email = $1', [email]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Fetch error' });
+  }
+});
+
+// Get user by ID
+app.get('/api/user-by-id/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
-    const result = await client.query('SELECT "DriverID","status" FROM "Driver" WHERE "UserID" = $1', [userId]);
-
-    if (result.rows.length > 0) {
-      const { DriverID, status } = result.rows[0];
-      res.json({ DriverID, status });
-    } else {
-      res.status(404).json({ message: 'Driver not found' });
-    }
+    const result = await pool.query(
+      'SELECT "UserID","username","email","photo_url","last_role" FROM "User" WHERE "UserID" = $1',
+      [userId]
+    );
+    if (!result.rows.length) return res.status(404).json({ message: 'User not found' });
+    res.json(result.rows[0]);
   } catch (error) {
-    console.error('Error fetching driver ID:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-
-
-
-// ✅ Forgot password
-app.put('/update-password', async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await client.query('UPDATE "User" SET password = $1 WHERE email = $2', [hashedPassword, email]);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error updating password:', error);
-    res.status(500).json({ message: 'Update error' });
-  }
-});
-
-// ✅ Upload user profile photo
-app.post('/upload-profile-photo', upload.single('photo'), async (req, res) => {
-  const { userId } = req.body; // 👈 Changed from email to userId
+// Upload profile photo
+app.post('/api/upload-profile-photo', upload.single('photo'), async (req, res) => {
+  const { userId } = req.body;
   const file = req.file;
   if (!file) return res.status(400).json({ message: 'No file uploaded' });
 
   const photoUrl = `/uploads/${file.filename}`;
   try {
-    await client.query('UPDATE "User" SET photo_url = $1 WHERE "UserID" = $2', [photoUrl, userId]);
+    await pool.query('UPDATE "User" SET photo_url = $1 WHERE "UserID" = $2', [photoUrl, userId]);
     res.json({ success: true, photo_url: photoUrl });
   } catch (error) {
-    console.error('Error saving profile photo:', error);
+    console.error(error);
     res.status(500).json({ message: 'Upload error' });
   }
 });
 
-
-// ✅ Get user photo
-app.get('/get-user-photo/:userId', async (req, res) => {
+// Ride history
+app.get('/api/ride-history/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
-    const result = await client.query('SELECT photo_url FROM "User" WHERE "UserID" = $1', [userId]);
-    res.json({ photo_url: result.rows[0]?.photo_url || null });
-  } catch (error) {
-    console.error('Error fetching photo:', error);
-    res.status(500).json({ message: 'Fetch error' });
-  }
-});
-
-
-// ✅ Ride history
-app.get('/ride-history/:userId', async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const result = await client.query('SELECT * FROM ride_History WHERE "UserID" = $1 ORDER BY ride_date DESC', [userId]);
+    const result = await pool.query('SELECT * FROM ride_History WHERE "UserID" = $1 ORDER BY ride_date DESC', [userId]);
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching ride history:', error);
+    console.error(error);
     res.status(500).json({ message: 'Failed to fetch ride history' });
   }
 });
 
+// Forgot/Update password
+app.put('/api/update-password', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE "User" SET password = $1 WHERE email = $2', [hashedPassword, email]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Update error' });
+  }
+});
 
-app.listen(PORT, "0.0.0.0", () => {
+// ==========================
+// GLOBAL ERROR HANDLER
+// ==========================
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Internal Server Error' });
+});
+
+// ==========================
+// START SERVER
+// ==========================
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
 });

@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const client = require('../db');
+const pool = require('../db');
 
 const router = express.Router();
 
@@ -17,8 +17,7 @@ const upload = multer({ storage });
 
 
 
-router.post('/upload-vehicle-image', upload.single('vehicleImage'), async (req, res) => {
-  const { driverId } = req.body;
+router.post('/', upload.single('vehicleImage'), async (req, res) => {  const { driverId } = req.body;
   const driverIdNum = parseInt(driverId);
   const file = req.file;
 
@@ -29,7 +28,7 @@ router.post('/upload-vehicle-image', upload.single('vehicleImage'), async (req, 
   const imageUrl = `/Vehicle_Images/${file.filename}`;
 
   try {
-    const result = await client.query('SELECT * FROM "Vehicle" WHERE "DriverID" = $1', [driverIdNum]);
+    const result = await pool.query('SELECT * FROM "Vehicle" WHERE "DriverID" = $1', [driverIdNum]);
 
     if (result.rows.length > 0) {
       // 🚮 Delete old file from disk
@@ -43,10 +42,10 @@ router.post('/upload-vehicle-image', upload.single('vehicleImage'), async (req, 
       }
 
       // 📝 Update new image
-      await client.query('UPDATE "Vehicle" SET vehicle_url = $1 WHERE "DriverID" = $2', [imageUrl, driverIdNum]);
+      await pool.query('UPDATE "Vehicle" SET vehicle_url = $1 WHERE "DriverID" = $2', [imageUrl, driverIdNum]);
       console.log('✅ Vehicle image updated');
     } else {
-      await client.query(
+      await pool.query(
         'INSERT INTO "Vehicle" ("DriverID", vehicle_url) VALUES ($1, $2)',
         [driverIdNum, imageUrl]
       );
@@ -70,7 +69,7 @@ router.delete('/delete-vehicle-image/:driverId', async (req, res) => {
 
   try {
     // Get current vehicle image path
-    const result = await client.query('SELECT vehicle_url FROM "Vehicle" WHERE "DriverID" = $1', [driverId]);
+    const result = await pool.query('SELECT vehicle_url FROM "Vehicle" WHERE "DriverID" = $1', [driverId]);
 
     if (result.rows.length === 0 || !result.rows[0].vehicle_url) {
       return res.status(404).json({ success: false, message: 'Vehicle image not found' });
@@ -85,7 +84,7 @@ router.delete('/delete-vehicle-image/:driverId', async (req, res) => {
     }
 
     // Remove image URL from DB
-    await client.query('UPDATE "Vehicle" SET vehicle_url = NULL WHERE "DriverID" = $1', [driverId]);
+    await pool.query('UPDATE "Vehicle" SET vehicle_url = NULL WHERE "DriverID" = $1', [driverId]);
 
     res.status(200).json({ success: true, message: 'Vehicle image deleted successfully' });
   } catch (err) {

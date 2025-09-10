@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 // Get Passenger by UserID
 router.get('/:userId', async (req, res) => {
@@ -11,7 +11,7 @@ router.get('/:userId', async (req, res) => {
   }
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       'SELECT * FROM "Passenger" WHERE "UserID" = $1',
       [userId]
     );

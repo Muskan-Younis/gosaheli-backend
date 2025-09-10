@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 // GET vehicle by DriverID
 router.get('/:driverId', async (req, res) => {
@@ -13,7 +13,7 @@ router.get('/:driverId', async (req, res) => {
   }
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       'SELECT * FROM "Vehicle" WHERE "DriverID" = $1',
       [driverId]
     );
@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
   const { VehicleModel, VehicleType, capacity, color, PlateNumber, DriverID } = req.body;
 
   try {
-    const insertResult = await client.query(
+    const insertResult = await pool.query(
       `INSERT INTO "Vehicle" ("VehicleModel", "VehicleType", capacity, color, "PlateNumber", "DriverID")
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING "VehicleID"`,
       [VehicleModel, VehicleType, capacity, color, PlateNumber, DriverID]
@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
     const vehicleId = insertResult.rows[0].VehicleID;
 
     // Update Driver table
-    await client.query(
+    await pool.query(
       `UPDATE "Driver" SET "VehicleID" = $1 WHERE "DriverID" = $2`,
       [vehicleId, DriverID]
     );
@@ -64,7 +64,7 @@ router.put('/:driverId', async (req, res) => {
   const { VehicleModel, VehicleType, capacity, color, PlateNumber } = req.body;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `UPDATE "Vehicle"
        SET "VehicleModel" = $1, "VehicleType" = $2, "capacity" = $3, "color" = $4, "PlateNumber" = $5
        WHERE "DriverID" = $6`,

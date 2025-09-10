@@ -1,20 +1,15 @@
 // backend/db.js
 require('dotenv').config();
-const { Client } = require('pg');
+const { Pool } = require('pg');
 
-const client = new Client({
-  user: process.env.PGUSER,
-  host: process.env.PGHOST,
-  database: process.env.PGDATABASE,
-  password: process.env.PGPASSWORD,
-  port: process.env.PGPORT,
-  ssl: {
-    rejectUnauthorized: false, // needed for Render's managed Postgres
-  },
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }, // Required for Neon
 });
 
-client.connect()
-  .then(() => console.log('✅ Connected to database'))
-  .catch(err => console.error('❌ Database connection error:', err));
+// Handle unexpected errors so Node doesn’t crash
+pool.on('error', (err) => {
+  console.error('❌ Unexpected DB error:', err);
+});
 
-module.exports = client;
+module.exports = pool;

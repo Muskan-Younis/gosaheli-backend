@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 const axios = require('axios');
 
 // ✅ Save push token using userId (for Passenger or Driver)
@@ -13,7 +13,7 @@ router.post('/save-push-token', async (req, res) => {
 
   try {
     // Step 1: Try to find Passenger
-    const passengerRes = await client.query(
+    const passengerRes = await pool.query(
       'SELECT "PassengerID" FROM "Passenger" WHERE "UserID" = $1',
       [userId]
     );
@@ -21,7 +21,7 @@ router.post('/save-push-token', async (req, res) => {
     if (passengerRes.rows.length > 0) {
       const passengerId = passengerRes.rows[0].PassengerID;
 
-      await client.query(
+      await pool.query(
         'UPDATE "Passenger" SET push_token = $1 WHERE "PassengerID" = $2',
         [token, passengerId]
       );
@@ -30,7 +30,7 @@ router.post('/save-push-token', async (req, res) => {
     }
 
     // Step 2: Try to find Driver
-    const driverRes = await client.query(
+    const driverRes = await pool.query(
       'SELECT "DriverID" FROM "Driver" WHERE "UserID" = $1',
       [userId]
     );
@@ -38,7 +38,7 @@ router.post('/save-push-token', async (req, res) => {
     if (driverRes.rows.length > 0) {
       const driverId = driverRes.rows[0].DriverID;
 
-      await client.query(
+      await pool.query(
         'UPDATE "Driver" SET push_token = $1 WHERE "DriverID" = $2',
         [token, driverId]
       );
@@ -65,7 +65,7 @@ router.post('/send-to-passenger', async (req, res) => {
 
   try {
     // Get request details including passenger info
-    const request = await client.query(
+    const request = await pool.query(
       `SELECT cr.*, p.push_token ,u.username
        FROM "Carpool_Request_Status" cr
        JOIN "Passenger" p ON cr."PassengerID" = p."PassengerID"

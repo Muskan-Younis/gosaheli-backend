@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const client = require("../db");
+const pool = require('../db');
 
 // =======================
 // GET favourite driver details for a passenger with time-decay rating algorithm
@@ -69,7 +69,7 @@ router.get("/passenger/:passengerId/details", async (req, res) => {
         `;
 
         console.log("📤 Executing SQL query for PassengerID:", numericPassengerId);
-        const result = await client.query(query, [numericPassengerId]);
+        const result = await pool.query(query, [numericPassengerId]);
         console.log("📦 Raw DB Result:", result.rows);
 
         if (result.rows.length === 0) {

@@ -2,7 +2,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const client = require('../db');
+const pool = require('../db');
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ router.delete('/delete-license-image', async (req, res) => {
 
   try {
     const field = side === 'front' ? 'license_front_url' : 'license_back_url';
-    const result = await client.query(`SELECT "${field}" FROM "Vehicle" WHERE "DriverID" = $1`, [driverId]);
+    const result = await pool.query(`SELECT "${field}" FROM "Vehicle" WHERE "DriverID" = $1`, [driverId]);
 
     const imageUrl = result.rows[0]?.[field];
     if (!imageUrl) return res.status(404).json({ error: 'No image found to delete' });
@@ -25,7 +25,7 @@ router.delete('/delete-license-image', async (req, res) => {
       fs.unlinkSync(filePath); // ✅ Delete file from disk
     }
 
-    await client.query(`UPDATE "Vehicle" SET "${field}" = NULL WHERE "DriverID" = $1`, [driverId]); // ✅ Clear field
+    await pool.query(`UPDATE "Vehicle" SET "${field}" = NULL WHERE "DriverID" = $1`, [driverId]); // ✅ Clear field
 
     res.json({ success: true, message: 'Image deleted successfully' });
   } catch (err) {

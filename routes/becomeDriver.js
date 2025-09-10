@@ -1,18 +1,18 @@
 // backend/routes/becomeDriver.js
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 router.post('/', async (req, res) => {
   const { userId } = req.body;
 
   try {
     // Check if user is already a driver
-    const check = await client.query('SELECT * FROM "Driver" WHERE "UserID" = $1', [userId]);
+    const check = await pool.query('SELECT * FROM "Driver" WHERE "UserID" = $1', [userId]);
 
     if (check.rows.length > 0) {
       // ✅ Still update the last_role if not set
-      await client.query(
+      await pool.query(
         'UPDATE "User" SET "last_role" = $1 WHERE "UserID" = $2',
         ['driver', userId]
       );
@@ -20,13 +20,13 @@ router.post('/', async (req, res) => {
     }
 
     // Insert new driver
-    const result = await client.query(
+    const result = await pool.query(
       'INSERT INTO "Driver" ("UserID") VALUES ($1) RETURNING "DriverID"',
       [userId]
     );
 
     // ✅ Update last_role to 'driver'
-   const update = await client.query(
+   const update = await pool.query(
   'UPDATE "User" SET "last_role" = $1 WHERE "UserID" = $2',
   ['driver', userId]
 );

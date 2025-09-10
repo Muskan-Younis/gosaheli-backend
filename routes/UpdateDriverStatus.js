@@ -1,7 +1,7 @@
 // backend/routes/UpdateDriverStatus.js
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 // Update driver status
 router.put('/status', async (req, res) => {
@@ -20,7 +20,7 @@ router.put('/status', async (req, res) => {
       RETURNING *
     `;
     
-    const result = await client.query(query, [status, driverId]);
+    const result = await pool.query(query, [status, driverId]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Driver not found' });
@@ -43,7 +43,7 @@ router.get('/status/:driverId', async (req, res) => {
 
   try {
     const query = 'SELECT "status" FROM "Driver" WHERE "DriverID" = $1';
-    const result = await client.query(query, [driverId]);
+    const result = await pool.query(query, [driverId]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Driver not found' });

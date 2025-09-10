@@ -1,7 +1,7 @@
 // backend/routes/becomePassenger.js
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 router.post('/', async (req, res) => {
   const { userId } = req.body;
@@ -12,14 +12,14 @@ router.post('/', async (req, res) => {
 
   try {
     // Check if already passenger
-    const checkResult = await client.query(
+    const checkResult = await pool.query(
       'SELECT * FROM "Passenger" WHERE "UserID" = $1',
       [userId]
     );
 
     if (checkResult.rows.length > 0) {
       // ✅ Still update the last_role if needed
-      await client.query(
+      await pool.query(
         'UPDATE "User" SET "last_role" = $1 WHERE "UserID" = $2',
         ['passenger', userId]
       );
@@ -27,13 +27,13 @@ router.post('/', async (req, res) => {
     }
 
     // Insert passenger
-    const insertResult = await client.query(
+    const insertResult = await pool.query(
       'INSERT INTO "Passenger" ("UserID") VALUES ($1) RETURNING *',
       [userId]
     );
 
     // ✅ Update last_role to 'passenger'
-    await client.query(
+    await pool.query(
       'UPDATE "User" SET "last_role" = $1 WHERE "UserID" = $2',
       ['passenger', userId]
     );
@@ -56,7 +56,7 @@ router.get('/user-by-request/:requestId', async (req, res) => {
 
   try {
     // 1. Get basic request info with DriverID and PassengerID
-    const requestQuery = await client.query(
+    const requestQuery = await pool.query(
       `SELECT crs."PassengerID", crs."DriverID", d."UserID" as "DriverUserID"
        FROM "Carpool_Request_Status" crs
        LEFT JOIN "Driver" d ON crs."DriverID" = d."DriverID"
@@ -88,7 +88,7 @@ router.get('/user-by-request/:requestId', async (req, res) => {
 
     // 3. Fetch passenger data
     if (PassengerID) {
-      const passengerQuery = await client.query(
+      const passengerQuery = await pool.query(
         `SELECT u."UserID", u."username", u."photo_url" 
          FROM "Passenger" p
          JOIN "User" u ON p."UserID" = u."UserID"
@@ -105,7 +105,7 @@ router.get('/user-by-request/:requestId', async (req, res) => {
 
     // 4. Fetch driver data - CRITICAL FIX
     if (DriverUserID) {  // Now using DriverUserID which we got from the first query
-      const driverQuery = await client.query(
+      const driverQuery = await pool.query(
         `SELECT "username", "photo_url" 
          FROM "User"
          WHERE "UserID" = $1`,
@@ -135,7 +135,7 @@ router.get('/user-by-id/:userId', async (req, res) => {
   const { userId } = req.params;
   
   try {
-    const result = await client.query(
+    const result = await pool.query(
       'SELECT "UserID", "username","photo_url" FROM "User" WHERE "UserID" = $1',
       [userId]
     );

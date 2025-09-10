@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 // Create a new carpool offer
 router.post('/offer', async (req, res) => {
@@ -17,7 +17,7 @@ router.post('/offer', async (req, res) => {
   } = req.body;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `INSERT INTO "Driver_Carpool_Offers" (
         "UserID", "DriverID", pickup_location, dropoff_location, seats, date, pickup_time, dropoff_time, recurring_days
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -47,7 +47,7 @@ router.get('/driver-offers/:driverId', async (req, res) => {
   const { driverId } = req.params;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `SELECT * 
        FROM "Driver_Carpool_Offers"
        WHERE "DriverID" = $1
@@ -71,7 +71,7 @@ router.get('/offer/:offerId', async (req, res) => {
   const { offerId } = req.params;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `SELECT * 
        FROM "Driver_Carpool_Offers"
        WHERE "CarpoolOfferID" = $1;`,
@@ -103,7 +103,7 @@ router.put('/offer/:offerId', async (req, res) => {
   } = req.body;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `UPDATE "Driver_Carpool_Offers"
        SET 
          pickup_location = $1,
@@ -144,7 +144,7 @@ router.get('/matched-requests-all/:driverId', async (req, res) => {
   const { driverId } = req.params;
 
   try {
-    const offers = await client.query(
+    const offers = await pool.query(
       `SELECT * FROM "Driver_Carpool_Offers" WHERE "DriverID" = $1`,
       [driverId]
     );
@@ -180,7 +180,7 @@ router.get('/matched-requests-all/:driverId', async (req, res) => {
       o.recurring_days || ''
     ]);
 
-    const result = await client.query(queryText, params);
+    const result = await pool.query(queryText, params);
     res.json({ matched: result.rows });
 
   } catch (err) {
@@ -196,7 +196,7 @@ router.delete('/delete-offer/:offerId', async (req, res) => {
   try {
     // First check if the offer exists
     const checkQuery = 'SELECT * FROM "Driver_Carpool_Offers" WHERE "CarpoolOfferID" = $1';
-    const checkResult = await client.query(checkQuery, [offerId]);
+    const checkResult = await pool.query(checkQuery, [offerId]);
     
     if (checkResult.rows.length === 0) {
       return res.status(404).json({
@@ -207,7 +207,7 @@ router.delete('/delete-offer/:offerId', async (req, res) => {
     
     // Delete the offer
     const deleteQuery = 'DELETE FROM "Driver_Carpool_Offers" WHERE "CarpoolOfferID" = $1';
-    const result = await client.query(deleteQuery, [offerId]);
+    const result = await pool.query(deleteQuery, [offerId]);
     
     if (result.rowCount > 0) {
       res.json({
@@ -232,7 +232,7 @@ router.delete('/delete-offer/:offerId', async (req, res) => {
 // Get all pending requests
 router.get('/all-pending-requests', async (_req, res) => {
   try {
-    const result = await client.query(`
+    const result = await pool.query(`
       SELECT *
       FROM "Carpool_Request_Status"
       WHERE status = 'pending'
@@ -251,7 +251,7 @@ router.post('/accept-request', async (req, res) => {
   const { requestId, driverId } = req.body;
   
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `UPDATE "Carpool_Request_Status" 
        SET status = 'accepted',
            "DriverID" = $1,
@@ -277,7 +277,7 @@ router.post('/reject-request', async (req, res) => {
   const { requestId, driverId } = req.body;
   
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `UPDATE "Carpool_Request_Status" 
        SET status = 'rejected',
            "DriverID" = $1,
@@ -303,7 +303,7 @@ router.post('/end-carpool', async (req, res) => {
   const { requestId, driverId } = req.body;
   
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `UPDATE "Carpool_Request_Status" 
        SET status = 'completed',
            completed_time = NOW()
@@ -328,7 +328,7 @@ router.get('/accepted-requests/:driverId', async (req, res) => {
   const { driverId } = req.params;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `SELECT * FROM "Carpool_Request_Status"
        WHERE  "status" = 'accepted' AND "DriverID" = $1
        ORDER BY "accepted_time" DESC`,
@@ -349,7 +349,7 @@ router.get('/upcoming-requests/:driverId', async (req, res) => {
   try {
     console.log(`Fetching upcoming rides for driver ${driverId}`); // Add this
     
-   const result = await client.query(
+   const result = await pool.query(
   `SELECT * FROM "Carpool_Request_Status"
    WHERE TRIM("status") = 'joined'
    AND "DriverID" = $1
@@ -376,7 +376,7 @@ router.get('/rejected-requests/:driverId', async (req, res) => {
   const { driverId } = req.params;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `SELECT * FROM "Carpool_Request_Status"
        WHERE "status" = 'rejected' AND "DriverID" = $1
        ORDER BY "rejected_time" DESC`,
@@ -395,7 +395,7 @@ router.get('/completed-requests/:driverId', async (req, res) => {
   const { driverId } = req.params;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `SELECT * FROM "Carpool_Request_Status"
        WHERE "status" = 'completed' AND "DriverID" = $1
        ORDER BY "completed_time" DESC`,

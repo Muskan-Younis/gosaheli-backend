@@ -1,7 +1,7 @@
 //backend/routes/carpool.js
 const express = require('express');
 const router = express.Router();
-const client = require('../db');
+const pool = require('../db');
 
 
 
@@ -11,7 +11,7 @@ router.get('/get-carpool-profile/:profileId', async (req, res) => {
   console.log("Fetching profile for ID:", profileId);
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       'SELECT * FROM carpool_profile WHERE carpool_profile_id = $1',
       [profileId]
     );
@@ -33,7 +33,7 @@ router.get('/get-user-carpool-profiles/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `SELECT * FROM carpool_profile WHERE "UserID" = $1 ORDER BY carpool_profile_id DESC`,
       [userId]
     );
@@ -115,7 +115,7 @@ router.post('/save-profile', async (req, res) => {
 
     ];
 
-    const result = await client.query(query, values);
+    const result = await pool.query(query, values);
 
     res.status(201).json({
       success: true,
@@ -139,7 +139,7 @@ router.delete('/delete-carpool-profile/:profileId', async (req, res) => {
   const { profileId } = req.params;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       'DELETE FROM carpool_profile WHERE carpool_profile_id = $1',
       [profileId]
     );
@@ -186,7 +186,7 @@ router.post('/create-status-request', async (req, res) => {
   } = req.body;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `
       INSERT INTO "Carpool_Request_Status" (
         "PassengerID",
@@ -265,7 +265,7 @@ router.delete('/delete-status-request/:requestId', async (req, res) => {
 
   try {
     // First verify the request exists
-    const checkResult = await client.query(
+    const checkResult = await pool.query(
       'SELECT * FROM "Carpool_Request_Status" WHERE "RequestID" = $1',
       [requestId]
     );
@@ -278,7 +278,7 @@ router.delete('/delete-status-request/:requestId', async (req, res) => {
     }
 
     // Then delete it
-    const deleteResult = await client.query(
+    const deleteResult = await pool.query(
       'DELETE FROM "Carpool_Request_Status" WHERE "RequestID" = $1 RETURNING *',
       [requestId]
     );
@@ -370,7 +370,7 @@ rating_summary AS (
       ORDER BY crs.date ASC;
     `;
 
-    const { rows } = await client.query(query, [passengerId]);
+    const { rows } = await pool.query(query, [passengerId]);
 
     const categorized = {
       pending: [],
@@ -422,7 +422,7 @@ router.patch('/update-status/:requestId', async (req, res) => {
       WHERE "RequestID" = $2
       RETURNING *;
     `;
-    const result = await client.query(updateQuery, [status, requestId]);
+    const result = await pool.query(updateQuery, [status, requestId]);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, message: "Request not found" });

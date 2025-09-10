@@ -1,7 +1,7 @@
 // backend/routes/feedback.js
 const express = require('express');
 const router = express.Router();
-const client = require('../db'); // PostgreSQL client
+const pool = require('../db');
 
 router.post('/', async (req, res) => {
   const { RateValue, DriverID, PassengerID, message,RequestID  } = req.body;
@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
       RequestID
     ];
 
-    const result = await client.query(query, values);
+    const result = await pool.query(query, values);
 
     res.status(201).json({
       success: true,
@@ -51,7 +51,7 @@ router.get("/:requestId", async (req, res) => {
   const { requestId } = req.params;
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       'SELECT "RateValue", "Message" FROM "Feedback" WHERE "RequestID" = $1',
       [requestId]
     );

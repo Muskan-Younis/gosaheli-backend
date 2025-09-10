@@ -1,7 +1,7 @@
 //backend/routes/favourites.js
 const express = require("express");
 const router = express.Router();
-const client = require("../db");
+const pool = require('../db');
 
 // =======================
 // ADD to Favourites 
@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
     `;
         console.log('favourite info: P/D/C ', PassengerID, DriverID, CreatedAt)
 
-        await client.query(query, [PassengerID, DriverID, CreatedAt ? new Date(CreatedAt) : new Date()]);
+        await pool.query(query, [PassengerID, DriverID, CreatedAt ? new Date(CreatedAt) : new Date()]);
 
         res.json({ success: true, message: "Favourite added successfully" });
     } catch (err) {
@@ -45,7 +45,7 @@ router.delete("/", async (req, res) => {
       WHERE "PassengerID" = $1 AND "DriverID" = $2
     `;
 
-        await client.query(query, [PassengerID, DriverID]);
+        await pool.query(query, [PassengerID, DriverID]);
 
         res.json({ success: true, message: "Favourite removed successfully" });
     } catch (err) {
@@ -72,7 +72,7 @@ router.get("/:passengerId", async (req, res) => {
         const numericPassengerId = parseInt(passengerId, 10);
 
         // First check if passenger exists in Favourites table
-        const existsCheck = await client.query(
+        const existsCheck = await pool.query(
             `SELECT 1 FROM "Favourites" WHERE "PassengerID" = $1 LIMIT 1`,
             [numericPassengerId]
         );
@@ -87,7 +87,7 @@ router.get("/:passengerId", async (req, res) => {
         }
 
         // If passenger exists, fetch their favorite drivers
-        const result = await client.query(
+        const result = await pool.query(
             `SELECT "DriverID" FROM "Favourites" WHERE "PassengerID" = $1`,
             [numericPassengerId]
         );
